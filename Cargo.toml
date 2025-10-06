@@ -1,0 +1,8 @@
+[package]
+name = "tumbler"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+avian3d = { git = "https://github.com/Jondolf/avian", branch = "main" }
+bevy = "0.17.2"
