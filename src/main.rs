@@ -94,8 +94,8 @@ fn setup(
 
     commands.spawn((
         RigidBody::Dynamic,
-        Collider::cuboid(0.25, 0.25, 0.25),
-        Mesh3d(meshes.add(Cuboid::new(0.25, 0.25, 0.25))),
+        Collider::cuboid(0.1, 0.1, 0.1),
+        Mesh3d(meshes.add(Cuboid::new(0.1, 0.1, 0.1))),
         MeshMaterial3d(materials.add(Color::from(basic::YELLOW))),
     ));
     Ok(())
