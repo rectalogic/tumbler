@@ -108,7 +108,7 @@ fn on_resize(
         let (projection, camera_global_transform) = camera.into_inner();
         let [_, topright, ..] = projection.get_frustum_corners(WORLDBOX_DEPTH, WORLDBOX_DEPTH + 1.);
         let mut worldbox_transform = worldbox.into_inner();
-        worldbox_transform.translation = Vec3::new(0., 0., -topright.z / 2.0);
+        worldbox_transform.translation = Vec3::new(0., 0., -topright.z);
         worldbox_transform.scale = Vec3::new(topright.x, topright.y, WORLDBOX_DEPTH);
 
         // XXX spawn a test cube inside the transformed worldbox
