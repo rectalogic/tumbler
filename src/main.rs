@@ -31,7 +31,7 @@ fn main() {
     app.run();
 }
 
-const WORLDBOX_DEPTH: f32 = 4.0;
+const WORLDBOX_DEPTH: f32 = 2.0;
 
 #[derive(Component)]
 struct WorldBox;
@@ -106,10 +106,10 @@ fn on_resize(
 ) {
     if resize_reader.read().last().is_some() {
         let (projection, camera_global_transform) = camera.into_inner();
-        let [_, topright, ..] = projection.get_frustum_corners(WORLDBOX_DEPTH, WORLDBOX_DEPTH + 1.);
+        let [_, topright, ..] = projection.get_frustum_corners(WORLDBOX_DEPTH, WORLDBOX_DEPTH);
         let mut worldbox_transform = worldbox.into_inner();
-        worldbox_transform.translation = Vec3::new(0., 0., -topright.z);
-        worldbox_transform.scale = Vec3::new(topright.x, topright.y, WORLDBOX_DEPTH);
+        worldbox_transform.translation = Vec3::new(0., 0., -(topright.z + WORLDBOX_DEPTH / 2.));
+        worldbox_transform.scale = Vec3::new(topright.x * 2., topright.y * 2., WORLDBOX_DEPTH);
 
         // XXX spawn a test cube inside the transformed worldbox
         commands.spawn((
