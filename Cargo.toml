@@ -8,7 +8,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = ["web"]
-web = ["dep:wasm-bindgen", "dep:web-sys", "dep:getrandom", "dep:console_error_panic_hook"]
+web = ["dep:wasm-bindgen", "dep:web-sys", "dep:getrandom"]
 
 [dependencies]
 avian3d = { git = "https://github.com/Jondolf/avian", branch = "main" }
@@ -16,4 +16,3 @@ bevy = "0.17.2"
 wasm-bindgen = { version = "0.2.104", optional = true }
 web-sys = { version = "0.3.81", features = ["DeviceAcceleration", "DeviceMotionEvent"], optional = true }
 getrandom = { version = "*", features = ["wasm_js"], optional = true }
-console_error_panic_hook = { version = "0.1.7", optional = true }

@@ -20,12 +20,8 @@ pub fn start() {
         DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 resolution: WindowResolution::new(720, 1280),
+                resizable: false,
                 canvas: Some("canvas".into()),
-                //XXX cli option to choose fullscreen
-                // mode: WindowMode::Fullscreen(
-                //     MonitorSelection::Current,
-                //     VideoModeSelection::Current,
-                // ),
                 ..default()
             }),
             ..default()

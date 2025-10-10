@@ -1,7 +1,6 @@
 use crate::start;
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use std::panic;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
@@ -13,7 +12,6 @@ extern "C" {
 #[cfg(feature = "web")]
 #[wasm_bindgen(start)]
 pub fn start_web() {
-    panic::set_hook(Box::new(console_error_panic_hook::hook));
     start();
 }
 

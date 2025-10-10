@@ -11,6 +11,9 @@
                 height: 100%;
                 margin: 0;
             }
+            #start-button {
+                position: absolute;
+            }
         </style>
         <script>
             Error.stackTraceLimit = 50;
@@ -22,8 +25,10 @@
 
             function resizeCanvas() {
                 const canvas = document.getElementById("canvas");
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
+                canvas.width = window.innerWidth * window.devicePixelRatio;
+                canvas.height = window.innerHeight * window.devicePixelRatio;
+                canvas.style.width = `${window.innerWidth}px`;
+                canvas.style.height = `${window.innerHeight}px`;
             }
         </script>
         <script type="module">
@@ -58,7 +63,7 @@
             );
         </script>
     </head>
-    <body onresize="resizeCanvas()">
+    <body onload="resizeCanvas()">
         <button id="start-button" onclick="initTumbler()">Start</button>
         <canvas id="canvas"></canvas>
     </body>
