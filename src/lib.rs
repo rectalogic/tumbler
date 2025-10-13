@@ -39,11 +39,11 @@ pub fn start() {
 
 const WORLDBOX_DEPTH: f32 = 2.0;
 
-#[derive(Component)]
+#[derive(Component, Copy, Clone)]
 struct WorldBox;
 
-#[derive(Component)]
-struct Item;
+#[derive(Component, Copy, Clone)]
+struct Dice;
 
 fn setup(
     mut commands: Commands,
@@ -116,8 +116,7 @@ fn setup(
 
 fn on_resize(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    assets: ResMut<AssetServer>,
     mut resize_reader: MessageReader<WindowResized>,
     camera: Single<(&Projection, &GlobalTransform), With<Camera>>,
     worldbox: Single<&mut Transform, With<WorldBox>>,
@@ -131,15 +130,16 @@ fn on_resize(
 
         // XXX spawn a test cube inside the transformed worldbox
         commands.spawn((
-            Item,
+            Dice,
             RigidBody::Dynamic,
-            Collider::cuboid(0.1, 0.1, 0.1),
-            Mesh3d(meshes.add(Cuboid::new(0.1, 0.1, 0.1))),
-            MeshMaterial3d(materials.add(Color::from(basic::YELLOW))),
+            SceneRoot(assets.load("dice.glb#Scene0")),
+            //XXX use Collider::round_cuboid
+            ColliderConstructorHierarchy::new(ColliderConstructor::ConvexDecompositionFromMesh),
             Transform::from_translation(
                 camera_global_transform
                     .transform_point(worldbox_transform.transform_point(Vec3::ZERO)),
-            ),
+            )
+            .with_scale(Vec3::splat(0.1)),
         ));
     }
 }
@@ -160,7 +160,7 @@ fn invert_normals(mesh: &mut Mesh) -> Result<()> {
 }
 
 fn log_worldbox(query: Single<&Transform, With<Camera3d>>) {
-    info!("{:?}", query.translation);
+    // info!("{:?}", query.translation);
 }
 
 fn apply_forces(
