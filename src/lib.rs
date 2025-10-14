@@ -14,12 +14,12 @@ use bevy::{
 #[cfg(feature = "web")]
 mod web;
 
-pub fn start() {
+pub fn start(width: u32, height: u32) {
     let mut app = App::new();
     app.add_plugins((
         DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                resolution: WindowResolution::new(720, 1280),
+                resolution: WindowResolution::new(width, height),
                 resizable: false,
                 canvas: Some("canvas".into()),
                 ..default()

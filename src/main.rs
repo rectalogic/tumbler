@@ -1,5 +1,5 @@
 use tumbler::start;
 
 fn main() {
-    start();
+    start(720, 1280);
 }

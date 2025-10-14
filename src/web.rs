@@ -10,9 +10,9 @@ extern "C" {
 }
 
 #[cfg(feature = "web")]
-#[wasm_bindgen(start)]
-pub fn start_web() {
-    start();
+#[wasm_bindgen]
+pub fn start_web(width: u32, height: u32) {
+    start(width, height);
 }
 
 pub fn plugin(app: &mut App) {
@@ -39,6 +39,7 @@ fn handle_motion(mut gravity: ResMut<Gravity>, mut camera_forces: Query<Forces, 
         );
         for mut forces in &mut camera_forces {
             forces.apply_force(acceleration);
+            info!("acceleration {acceleration:?}"); //XXX
         }
     }
 }

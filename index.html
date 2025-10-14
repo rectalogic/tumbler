@@ -23,21 +23,13 @@
                 return _deviceMotionEvent;
             }
 
-            function resizeCanvas() {
-                const canvas = document.getElementById("canvas");
-                canvas.width = window.innerWidth * window.devicePixelRatio;
-                canvas.height = window.innerHeight * window.devicePixelRatio;
-                canvas.style.width = `${window.innerWidth}px`;
-                canvas.style.height = `${window.innerHeight}px`;
-            }
-
             // Workaround https://github.com/bevyengine/bevy/issues/21497
             if (!document.exitPointerLock) {
                 document.exitPointerLock = () => {};
             }
         </script>
         <script type="module">
-            import init from "./pkg/tumbler.js";
+            import init, { start_web } from "./pkg/tumbler.js";
 
             async function initTumbler() {
                 if (
@@ -59,6 +51,7 @@
 
                 document.getElementById("start-button").style.display = "none";
                 await init();
+                start_web(window.innerWidth, window.innerHeight);
             }
             window.initTumbler = initTumbler;
 
@@ -68,7 +61,7 @@
             );
         </script>
     </head>
-    <body onload="resizeCanvas()">
+    <body>
         <button id="start-button" onclick="initTumbler()">Start</button>
         <canvas id="canvas"></canvas>
     </body>
