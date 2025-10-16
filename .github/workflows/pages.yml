@@ -30,7 +30,7 @@ jobs:
           mkdir web
           cp index.html web
           cp -r assets web/
-          wasm-pack build --dev --target web --out-dir web/pkg
+          wasm-pack build --target web --out-dir web/pkg --features web
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
