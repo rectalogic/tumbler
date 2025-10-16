@@ -2,6 +2,7 @@ use std::f32::consts::PI;
 
 use avian3d::prelude::*;
 use bevy::{
+    audio::{PlaybackMode, Volume},
     color::palettes::basic,
     mesh::VertexAttributeValues,
     prelude::*,
@@ -18,7 +19,6 @@ pub fn start(width: u32, height: u32) {
             primary_window: Some(Window {
                 resolution: WindowResolution::new(width, height),
                 resizable: false,
-                canvas: Some("canvas".into()),
                 ..default()
             }),
             ..default()
@@ -29,6 +29,7 @@ pub fn start(width: u32, height: u32) {
         web::plugin,
     ))
     .add_systems(Startup, setup)
+    .add_systems(Update, handle_collisions)
     .add_systems(Last, on_resize);
 
     app.run();
@@ -42,11 +43,25 @@ struct WorldBox;
 #[derive(Component, Copy, Clone)]
 struct Dice;
 
+#[derive(Resource, Deref)]
+struct Dice2DiceCollisionSound(Handle<AudioSource>);
+
+#[derive(Resource, Deref)]
+struct Dice2WallCollisionSound(Handle<AudioSource>);
+
 fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) -> Result<()> {
+    commands.insert_resource(Dice2DiceCollisionSound(
+        asset_server.load("sounds/dice-dice-collision.mp3"),
+    ));
+    commands.insert_resource(Dice2WallCollisionSound(
+        asset_server.load("sounds/dice-wall-collision.mp3"),
+    ));
+
     const WORLDBOX_SIZE: f32 = 1.0;
     let mut mesh = Mesh::from(Cuboid::new(WORLDBOX_SIZE, WORLDBOX_SIZE, WORLDBOX_SIZE));
     invert_normals(&mut mesh)?;
@@ -62,58 +77,56 @@ fn setup(
         LinearDamping(0.8),
         LockedAxes::ROTATION_LOCKED,
         NoAutoAngularInertia,
-        children![
-            (
+        children![(
+            WorldBox,
+            Mesh3d(meshes.add(mesh)),
+            MeshMaterial3d(materials.add(Color::from(basic::PURPLE))),
+            Collider::compound(vec![
+                // Ceiling
+                (
+                    Position::from_xyz(0., WORLDBOX_SIZE / 2., 0.),
+                    Quat::IDENTITY,
+                    Collider::half_space(Vec3::NEG_Y),
+                ),
+                // Floor
+                (
+                    Position::from_xyz(0., -WORLDBOX_SIZE / 2., 0.),
+                    Quat::IDENTITY,
+                    Collider::half_space(Vec3::Y),
+                ),
+                // Right wall
+                (
+                    Position::from_xyz(WORLDBOX_SIZE / 2., 0., 0.),
+                    Quat::IDENTITY,
+                    Collider::half_space(Vec3::NEG_X),
+                ),
+                // Left wall
+                (
+                    Position::from_xyz(-WORLDBOX_SIZE / 2., 0., 0.),
+                    Quat::IDENTITY,
+                    Collider::half_space(Vec3::X),
+                ),
+                // Back wall
+                (
+                    Position::from_xyz(0., 0., WORLDBOX_SIZE / 2.),
+                    Quat::IDENTITY,
+                    Collider::half_space(Vec3::NEG_Z),
+                ),
+                // Front wall
+                (
+                    Position::from_xyz(0., 0., -WORLDBOX_SIZE / 2.),
+                    Quat::IDENTITY,
+                    Collider::half_space(Vec3::Z),
+                ),
+            ]),
+            children![(
                 PointLight {
                     shadows_enabled: true,
                     ..default()
                 },
-                Transform::from_xyz(WORLDBOX_SIZE / 2., WORLDBOX_SIZE / 2., WORLDBOX_SIZE / 2.),
-            ),
-            (
-                WorldBox,
-                Mesh3d(meshes.add(mesh)),
-                MeshMaterial3d(materials.add(Color::from(basic::PURPLE))),
-                Collider::compound(vec![
-                    // Ceiling
-                    (
-                        Position::from_xyz(0., WORLDBOX_SIZE / 2., 0.),
-                        Quat::IDENTITY,
-                        Collider::half_space(Vec3::NEG_Y),
-                    ),
-                    // Floor
-                    (
-                        Position::from_xyz(0., -WORLDBOX_SIZE / 2., 0.),
-                        Quat::IDENTITY,
-                        Collider::half_space(Vec3::Y),
-                    ),
-                    // Right wall
-                    (
-                        Position::from_xyz(WORLDBOX_SIZE / 2., 0., 0.),
-                        Quat::IDENTITY,
-                        Collider::half_space(Vec3::NEG_X),
-                    ),
-                    // Left wall
-                    (
-                        Position::from_xyz(-WORLDBOX_SIZE / 2., 0., 0.),
-                        Quat::IDENTITY,
-                        Collider::half_space(Vec3::X),
-                    ),
-                    // Back wall
-                    (
-                        Position::from_xyz(0., 0., WORLDBOX_SIZE / 2.),
-                        Quat::IDENTITY,
-                        Collider::half_space(Vec3::NEG_Z),
-                    ),
-                    // Front wall
-                    (
-                        Position::from_xyz(0., 0., -WORLDBOX_SIZE / 2.),
-                        Quat::IDENTITY,
-                        Collider::half_space(Vec3::Z),
-                    ),
-                ])
-            )
-        ],
+                Transform::from_xyz(0., WORLDBOX_SIZE / 2.2, WORLDBOX_SIZE),
+            )],
+        )],
     ));
 
     Ok(())
@@ -138,6 +151,7 @@ fn on_resize(
             RigidBody::Dynamic,
             Mass(0.0012), // 1.2 grams
             SceneRoot(assets.load("dice.glb#Scene0")),
+            CollisionEventsEnabled,
             Collider::round_cuboid(1.6, 1.6, 1.6, PI / 128.),
             Transform::from_translation(
                 camera_global_transform
@@ -162,4 +176,32 @@ fn invert_normals(mesh: &mut Mesh) -> Result<()> {
 
     mesh.invert_winding()?;
     Ok(())
+}
+
+fn handle_collisions(
+    mut commands: Commands,
+    mut collisions_started: MessageReader<CollisionStart>,
+    collisions: Collisions,
+    dice: Query<Entity, With<Dice>>,
+    dice2dice_sound: Res<Dice2DiceCollisionSound>,
+    dice2wall_sound: Res<Dice2WallCollisionSound>,
+) {
+    for event in collisions_started.read() {
+        if let Some(contact_pair) = collisions.get(event.collider1, event.collider2) {
+            let magnitude = contact_pair.total_normal_impulse_magnitude() * 1000.;
+            info!(magnitude); //XXX
+            let settings = PlaybackSettings {
+                mode: PlaybackMode::Despawn,
+                volume: Volume::Linear(magnitude),
+                ..PlaybackSettings::ONCE
+            };
+            if dice.contains(event.collider1) && dice.contains(event.collider2) {
+                // dice/dice collision
+                commands.spawn((AudioPlayer(dice2dice_sound.clone()), settings));
+            } else {
+                // dice/worldbox collision
+                commands.spawn((AudioPlayer(dice2wall_sound.clone()), settings));
+            }
+        }
+    }
 }
