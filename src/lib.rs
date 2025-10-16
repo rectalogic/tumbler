@@ -9,7 +9,7 @@ use bevy::{
     window::{WindowResized, WindowResolution},
 };
 
-#[cfg(feature = "web")]
+#[cfg(target_arch = "wasm32")]
 mod web;
 
 pub fn start(width: u32, height: u32) {
@@ -25,7 +25,7 @@ pub fn start(width: u32, height: u32) {
         }),
         PhysicsPlugins::default(),
         // PhysicsDebugPlugin,
-        #[cfg(feature = "web")]
+        #[cfg(target_arch = "wasm32")]
         web::plugin,
     ))
     .add_systems(Startup, setup)

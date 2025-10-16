@@ -30,7 +30,7 @@ jobs:
           mkdir web
           cp index.html restart-audio-context.js web/
           cp -r assets web/
-          wasm-pack build --target web --out-dir web/pkg --features web
+          wasm-pack build --target web --out-dir web/pkg
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

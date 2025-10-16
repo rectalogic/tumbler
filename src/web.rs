@@ -9,7 +9,6 @@ extern "C" {
     fn deviceMotionEvent() -> web_sys::DeviceMotionEvent;
 }
 
-#[cfg(feature = "web")]
 #[wasm_bindgen]
 pub fn start_web(width: u32, height: u32) {
     start(width, height);
