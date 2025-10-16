@@ -1,3 +1,11 @@
+# Dice Tumbler
+
+Tumbling 3D dice using `devicemotion` accelerometer.
+
+Live demo: https://rectalogic.com/tumbler/
+
+## Development
+
 devicemotion requires TLS
 
 ```sh-session
