@@ -50,6 +50,7 @@
                 }
 
                 document.getElementById("start-button").style.display = "none";
+                import("./restart-audio-context.js");
                 await init();
                 start_web(window.innerWidth, window.innerHeight);
             }

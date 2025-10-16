@@ -28,7 +28,7 @@ jobs:
       - name: Build
         run: |
           mkdir web
-          cp index.html web
+          cp index.html restart-audio-context.js web/
           cp -r assets web/
           wasm-pack build --target web --out-dir web/pkg --features web
       - name: Upload artifact
