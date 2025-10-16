@@ -38,8 +38,7 @@ fn handle_motion(mut gravity: ResMut<Gravity>, mut camera_forces: Query<Forces, 
             acceleration.z().unwrap_or(0.) as f32,
         );
         for mut forces in &mut camera_forces {
-            forces.apply_force(acceleration);
-            info!("acceleration {acceleration:?}"); //XXX
+            forces.apply_force(acceleration * 5.);
         }
     }
 }

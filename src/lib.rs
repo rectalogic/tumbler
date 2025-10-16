@@ -1,9 +1,6 @@
 use std::f32::consts::PI;
 
-use avian3d::{
-    math::{Scalar, Vector},
-    prelude::*,
-};
+use avian3d::prelude::*;
 use bevy::{
     color::palettes::basic,
     mesh::VertexAttributeValues,
@@ -27,11 +24,11 @@ pub fn start(width: u32, height: u32) {
             ..default()
         }),
         PhysicsPlugins::default(),
+        // PhysicsDebugPlugin,
         #[cfg(feature = "web")]
         web::plugin,
     ))
     .add_systems(Startup, setup)
-    .add_systems(Update, (apply_forces, log_worldbox))
     .add_systems(Last, on_resize);
 
     app.run();
@@ -61,54 +58,62 @@ fn setup(
         }),
         RigidBody::Dynamic,
         GravityScale(0.0),
-        Mass(3.0),
+        Mass(0.2), // 200 grams
         LinearDamping(0.8),
         LockedAxes::ROTATION_LOCKED,
-        AngularInertia::new(Vec3::new(2.0, 2.0, 2.0)),
         NoAutoAngularInertia,
-        children![(
-            WorldBox,
-            Mesh3d(meshes.add(mesh)),
-            MeshMaterial3d(materials.add(Color::from(basic::PURPLE))),
-            Collider::compound(vec![
-                // Ceiling
-                (
-                    Position::from_xyz(0., WORLDBOX_SIZE / 2., 0.),
-                    Quat::IDENTITY,
-                    Collider::half_space(Vec3::NEG_Y),
-                ),
-                // Floor
-                (
-                    Position::from_xyz(0., -WORLDBOX_SIZE / 2., 0.),
-                    Quat::IDENTITY,
-                    Collider::half_space(Vec3::Y),
-                ),
-                // Right wall
-                (
-                    Position::from_xyz(WORLDBOX_SIZE / 2., 0., 0.),
-                    Quat::IDENTITY,
-                    Collider::half_space(Vec3::NEG_X),
-                ),
-                // Left wall
-                (
-                    Position::from_xyz(-WORLDBOX_SIZE / 2., 0., 0.),
-                    Quat::IDENTITY,
-                    Collider::half_space(Vec3::X),
-                ),
-                // Back wall
-                (
-                    Position::from_xyz(0., 0., WORLDBOX_SIZE / 2.),
-                    Quat::IDENTITY,
-                    Collider::half_space(Vec3::NEG_Z),
-                ),
-                // Front wall
-                (
-                    Position::from_xyz(0., 0., -WORLDBOX_SIZE / 2.),
-                    Quat::IDENTITY,
-                    Collider::half_space(Vec3::Z),
-                ),
-            ])
-        )],
+        children![
+            (
+                PointLight {
+                    shadows_enabled: true,
+                    ..default()
+                },
+                Transform::from_xyz(WORLDBOX_SIZE / 2., WORLDBOX_SIZE / 2., WORLDBOX_SIZE / 2.),
+            ),
+            (
+                WorldBox,
+                Mesh3d(meshes.add(mesh)),
+                MeshMaterial3d(materials.add(Color::from(basic::PURPLE))),
+                Collider::compound(vec![
+                    // Ceiling
+                    (
+                        Position::from_xyz(0., WORLDBOX_SIZE / 2., 0.),
+                        Quat::IDENTITY,
+                        Collider::half_space(Vec3::NEG_Y),
+                    ),
+                    // Floor
+                    (
+                        Position::from_xyz(0., -WORLDBOX_SIZE / 2., 0.),
+                        Quat::IDENTITY,
+                        Collider::half_space(Vec3::Y),
+                    ),
+                    // Right wall
+                    (
+                        Position::from_xyz(WORLDBOX_SIZE / 2., 0., 0.),
+                        Quat::IDENTITY,
+                        Collider::half_space(Vec3::NEG_X),
+                    ),
+                    // Left wall
+                    (
+                        Position::from_xyz(-WORLDBOX_SIZE / 2., 0., 0.),
+                        Quat::IDENTITY,
+                        Collider::half_space(Vec3::X),
+                    ),
+                    // Back wall
+                    (
+                        Position::from_xyz(0., 0., WORLDBOX_SIZE / 2.),
+                        Quat::IDENTITY,
+                        Collider::half_space(Vec3::NEG_Z),
+                    ),
+                    // Front wall
+                    (
+                        Position::from_xyz(0., 0., -WORLDBOX_SIZE / 2.),
+                        Quat::IDENTITY,
+                        Collider::half_space(Vec3::Z),
+                    ),
+                ])
+            )
+        ],
     ));
 
     Ok(())
@@ -128,19 +133,19 @@ fn on_resize(
         worldbox_transform.translation = Vec3::new(0., 0., -(topright.z + WORLDBOX_DEPTH / 2.));
         worldbox_transform.scale = Vec3::new(topright.x * 2., topright.y * 2., WORLDBOX_DEPTH);
 
-        // XXX spawn a test cube inside the transformed worldbox
-        commands.spawn((
+        let dice_bundle = (
             Dice,
             RigidBody::Dynamic,
+            Mass(0.0012), // 1.2 grams
             SceneRoot(assets.load("dice.glb#Scene0")),
-            //XXX use Collider::round_cuboid
-            ColliderConstructorHierarchy::new(ColliderConstructor::ConvexDecompositionFromMesh),
+            Collider::round_cuboid(1.6, 1.6, 1.6, PI / 128.),
             Transform::from_translation(
                 camera_global_transform
                     .transform_point(worldbox_transform.transform_point(Vec3::ZERO)),
             )
-            .with_scale(Vec3::splat(0.1)),
-        ));
+            .with_scale(Vec3::splat(0.3)),
+        );
+        commands.spawn_batch([dice_bundle.clone(), dice_bundle]);
     }
 }
 
@@ -157,27 +162,4 @@ fn invert_normals(mesh: &mut Mesh) -> Result<()> {
 
     mesh.invert_winding()?;
     Ok(())
-}
-
-fn log_worldbox(query: Single<&Transform, With<Camera3d>>) {
-    // info!("{:?}", query.translation);
-}
-
-fn apply_forces(
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut query: Query<Forces, With<Camera3d>>,
-) {
-    for mut forces in &mut query {
-        let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
-        let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]);
-        let left = keyboard_input.any_pressed([KeyCode::KeyA, KeyCode::ArrowLeft]);
-        let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]);
-
-        let horizontal = right as i8 - left as i8;
-        let vertical = down as i8 - up as i8;
-        let direction =
-            Vector::new(horizontal as Scalar, vertical as Scalar, 0.0).normalize_or_zero();
-        forces.apply_force(direction * 50.);
-        // forces.apply_linear_impulse(direction * time.delta_secs());
-    }
 }
